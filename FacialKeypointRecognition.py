@@ -28,12 +28,14 @@ class FacialKeypointRecognition:
     X_train, y_train = [], []
     X_test = []
 
+    prediction=[]
+
     def __init__(self):
         """
         initialize and run the network
         """
 
-        self.Network = Network()
+        self.network = Network()
 
 
     def loadData(self):
@@ -46,15 +48,15 @@ class FacialKeypointRecognition:
         """
 
         self.X_train, self.y_train = self.load()
-        self.X_test = self.load(test=True)
+        self.X_test, _ = self.load(test=True)
 
 
     def load(self,
              test=False,
              cols=None,
-             dropMissing=False,
+             dropMissing=True,
              rescale=True,
-             reshape=True,
+             reshape=False,
              rs=42
             ):
         """
@@ -65,8 +67,8 @@ class FacialKeypointRecognition:
             the target columns
         *dropMissing* - by default only columns without missing values are used
         *rescale* - by default pixel values are rescaled to [0, 1]
-        *reshape* - by default images are given as a two-dimensional array
-            instead of one vector
+        *reshape* - by default images are given as one vector instead of a
+            two-dimensional array
         *rs* - random state for repeatability
         """
 
@@ -102,7 +104,7 @@ class FacialKeypointRecognition:
             # scale target coordinates to [-1, 1]
             if rescale:
                 y = (y - 48) / 48
-            y = y.astype(np.int32)
+            y = y.astype(np.float32)
 
             # shuffle training data
             X, y = shuffle(X, y, random_state=rs)
@@ -110,6 +112,18 @@ class FacialKeypointRecognition:
             y = None
 
         return X, y
+
+
+    def fit(self):
+        """train the network with the training data"""
+
+        self.network.fit(self.X_train, self.y_train)
+
+
+    def predict(self):
+        """predict the target values for the testset"""
+
+        self.prediction = self.network.predict(self.X_test)
 
 
 class Network:
@@ -127,36 +141,35 @@ class Network:
         """set up the network with its layers"""
 
         self.network = NeuralNet(
-            layers[
+            layers=[
                 ('input', layers.InputLayer),
                 ('hidden', layers.DenseLayer),
-                ('output', layers.DenseLayer),
-                ],
-        input_shape=(None, 9216),
-        hidden_num_units=100,
-        output_nonlinearity=None,
-        output_num_units=30,
+                ('output', layers.DenseLayer)],
+            input_shape=(None, 9216),
+            hidden_num_units=100,
+            output_nonlinearity=None,
+            output_num_units=30,
 
-        update=nesterov_momentum,
-        update_learning_rate=0.01,
-        update_momentum=0.9,
+            update=nesterov_momentum,
+            update_learning_rate=0.01,
+            update_momentum=0.9,
 
-        regression=True,
-        max_epochs=400,
-        verbose=1,
+            regression=True,
+            max_epochs=400,
+            # verbose=1,
         )
 
 
     def fit(self, X, y):
         """use the training set to fit the network"""
 
-        pass
+        return self.network.fit(X,y)
 
 
     def predict(self, X):
         """predict the targets after the network is fit"""
 
-        pass
+        return self.network.predict(X)
 
 
 def main():
@@ -167,9 +180,9 @@ def main():
 
     fkr = FacialKeypointRecognition()
     fkr.loadData()
-    fkr.Network()
+    # fkr.Network()
 
-    fkr.Network.fit(fkr.X_train, fkr.y_train)
+    fkr.network.fit(fkr.X_train, fkr.y_train)
 
 
 # only run when loaded as top file
