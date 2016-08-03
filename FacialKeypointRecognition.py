@@ -153,7 +153,6 @@ class FacialKeypointRecognition:
 
         # write output list to disk
         outputset.to_csv(fOutFile, index=False)
-)
 
 
 class Network:
