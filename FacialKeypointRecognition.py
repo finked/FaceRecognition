@@ -24,11 +24,14 @@ class FacialKeypointRecognition:
 
     ftrain = './data/training.csv'
     ftest = './data/test.csv'
+    fIdList = './data/IdList.csv'
+    fOutputList = './data/IdLookupTable.csv'
+    fOutFile = './data/solution.csv'
 
     X_train, y_train = [], []
     X_test = []
 
-    prediction=[]
+    prediction = []
 
     def __init__(self):
         """
@@ -124,6 +127,33 @@ class FacialKeypointRecognition:
         """predict the target values for the testset"""
 
         self.prediction = self.network.predict(self.X_test)
+
+
+    def savePrediction(self):
+        """save the predicted coordinates into a csv file to upload"""
+
+        # transform predictions
+        predictions = self.predictions * 48 + 48
+        predictions = predictions.clip(0, 96)
+
+        # read id list
+        outputset = read_csv(os.path.expanduser(fIdList))
+
+        # get needed predictions
+        outputPrediction = []
+        for i in range(len(outputset)):
+            outputPrediction.append(predictions[outputset['ImageId'][i]-1,
+                outputset['FeatureName'][i]-1])
+
+        # read output list
+        outputset = read_csv(os.path.expanduser(fOutputList))
+
+        # fill output list with predictions
+        outputset['Location'] = outputPrediction
+
+        # write output list to disk
+        outputset.to_csv(fOutFile, index=False)
+)
 
 
 class Network:
