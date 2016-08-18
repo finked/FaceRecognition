@@ -9,10 +9,9 @@ from sklearn.utils import shuffle
 # import theano
 # import theano.Tensor as T
 # from lasagne.nonlinearities import leaky_rectify, softmax
-from lasagne.updates import nesterov_momentum
-from lasagne import layers
-from nolearn.lasagne import NeuralNet
 from pandas.io.parsers import read_csv
+
+import networks
 
 class FacialKeypointRecognition:
     """
@@ -33,15 +32,15 @@ class FacialKeypointRecognition:
 
     prediction = []
 
-    def __init__(self):
+    def __init__(self, network=networks.simpleNetwork):
         """
         initialize and run the network
         """
 
-        self.network = Network()
+        self.network = network()
 
 
-    def loadData(self):
+    def loadData(self, *args, **kwargs):
         """
         load the images
 
@@ -50,8 +49,8 @@ class FacialKeypointRecognition:
         The test-set only contains the images
         """
 
-        self.X_train, self.y_train = self.load()
-        self.X_test, _ = self.load(test=True)
+        self.X_train, self.y_train = self.load(*args, **kwargs)
+        self.X_test, _ = self.load(test=True, *args, **kwargs)
 
 
     def load(self,
@@ -155,64 +154,17 @@ class FacialKeypointRecognition:
         outputset.to_csv(self.fOutFile, index=False)
 
 
-class Network:
-    """
-    this is the neuronal network that is trained and used to predict targets
-
-    this class should be able to be used as a simple shallow network or as a
-    deep convolutional network.
-    """
-
-    # the neural network
-    network = []
-
-    def __init__(self):
-        """set up the network with its layers"""
-
-        self.network = NeuralNet(
-            layers=[
-                ('input', layers.InputLayer),
-                ('hidden', layers.DenseLayer),
-                ('output', layers.DenseLayer)],
-            input_shape=(None, 9216),
-            hidden_num_units=100,
-            output_nonlinearity=None,
-            output_num_units=30,
-
-            update=nesterov_momentum,
-            update_learning_rate=0.01,
-            update_momentum=0.9,
-
-            regression=True,
-            max_epochs=400,
-            # verbose=1,
-        )
-
-
-    def fit(self, X, y):
-        """use the training set to fit the network"""
-
-        return self.network.fit(X,y)
-
-
-    def predict(self, X):
-        """predict the targets after the network is fit"""
-
-        return self.network.predict(X)
-
-
 def main():
     """
     main function to load the data, train a network on the data and predict
     the testset on the with the trained network
     """
 
-    fkr = FacialKeypointRecognition()
-    fkr.loadData()
-    # fkr.Network()
-
-    fkr.network.fit(fkr.X_train, fkr.y_train)
-
+    fkr = FacialKeypointRecognition(networks.convolutionalNetwork)
+    fkr.loadData(reshape=True)
+    fkr.fit()
+    fkr.predict()
+    fkr.savePrediction()
 
 # only run when loaded as top file
 if __name__ == "__main__":
