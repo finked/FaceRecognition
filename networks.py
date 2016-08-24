@@ -6,6 +6,8 @@ from lasagne.updates import nesterov_momentum
 from lasagne import layers
 from nolearn.lasagne import NeuralNet
 
+import augmentation
+
 class simpleNetwork:
     """
     this is the neuronal network that is trained and used to predict targets
@@ -84,8 +86,11 @@ class convolutionalNetwork:
             update_learning_rate=0.01,
             update_momentum=0.9,
 
+            # data augmentation by flipping the images
+            batch_iterator_train=augmentation.FlipBatchIterator(batch_size=128),
+
             regression=True,
-            max_epochs=1000,
+            max_epochs=50,
             verbose=1,
             )
 

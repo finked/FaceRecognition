@@ -2,6 +2,7 @@
 
 import os
 import numpy as np
+import pickle
 
 from sklearn.utils import shuffle
 
@@ -154,6 +155,20 @@ class FacialKeypointRecognition:
         outputset.to_csv(self.fOutFile, index=False)
 
 
+    def saveState(self, filename='network.pickle'):
+        """save the learned state of the network into a pickle-file"""
+
+        with open(filename, 'wb') as file:
+            pickle.dump(self.network, file, -1)
+
+
+    def loadState(self, filename='network.pickle'):
+        """load a earlier saved state of the network from a pickle-file"""
+
+        with open(filename, 'rb') as file:
+            self.network = pickle.load(file)
+
+
 def main():
     """
     main function to load the data, train a network on the data and predict
@@ -164,6 +179,7 @@ def main():
     fkr.loadData(reshape=True)
     fkr.fit()
     fkr.predict()
+    fkr.saveState()
     fkr.savePrediction()
 
 # only run when loaded as top file
