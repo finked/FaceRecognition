@@ -158,8 +158,11 @@ class FacialKeypointRecognition:
     def saveState(self, filename='network.pickle'):
         """save the learned state of the network into a pickle-file"""
 
-        with open(filename, 'wb') as file:
-            pickle.dump(self.network, file, -1)
+        try:
+            with open(filename, 'wb') as file:
+                pickle.dump(self.network, file, -1)
+        except:
+            print("couldn't save state")
 
 
     def loadState(self, filename='network.pickle'):

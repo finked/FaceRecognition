@@ -90,7 +90,7 @@ class convolutionalNetwork:
             batch_iterator_train=augmentation.FlipBatchIterator(batch_size=128),
 
             regression=True,
-            max_epochs=50,
+            max_epochs=2000,
             verbose=1,
             )
 
