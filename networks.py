@@ -61,7 +61,7 @@ class convolutionalNetwork:
 
     network = []
 
-    def __init__(self):
+    def __init__(self, epochs=2000):
 
         self.network = NeuralNet(
             layers=[
@@ -90,7 +90,7 @@ class convolutionalNetwork:
             batch_iterator_train=augmentation.FlipBatchIterator(batch_size=128),
 
             regression=True,
-            max_epochs=2000,
+            max_epochs=epochs,
             verbose=1,
             )
 
