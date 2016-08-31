@@ -77,3 +77,29 @@ def showImages(images, predictions=None, imagesInRow=4):
             showImage(images[i], axis=axis)
 
     plt.show()
+
+
+
+def plotHistory(*networks):
+    """
+    plot the training history of one or more neural network
+
+    a network is given as tuple [<name>, <network>]
+    """
+
+    for network in networks:
+        name = network[0]
+        history = network[1].network.train_history_
+
+        train_loss = np.array([i["train_loss"] for i in history])
+        valid_loss = np.array([i["valid_loss"] for i in history])
+        plt.plot(train_loss, linewidth=3, label=name + " train")
+        plt.plot(valid_loss, linewidth=3, label=name + " valid")
+        plt.grid()
+        plt.legend()
+        plt.xlabel("epoch")
+        plt.ylabel("loss")
+        plt.ylim(1e-3, 1e-2)
+        plt.yscale("log")
+
+    plt.show()
