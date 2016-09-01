@@ -169,11 +169,13 @@ class FacialKeypointRecognition:
             if retries > 0:
                 oldLimit = sys.getrecursionlimit()
                 limit = oldLimit * 100
+                print("Recursion limit of {} reached. Trying again with {}".format(
+                    oldLimit, limit))
                 sys.setrecursionlimit(limit)
                 self.saveState(filename, retries=retries-1)
                 sys.setrecursionlimit(oldLimit)
             else:
-                print("Maximum tries exceeded, giving up")
+                print("Recursion limit reached. Maximum tries exceeded, giving up")
                 print(RecursionError)
 
 
