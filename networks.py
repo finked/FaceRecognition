@@ -1,5 +1,7 @@
 """ networks.py - the networks that are used for facial keypoint recognition """
 
+import signal
+
 import numpy as np
 import theano
 
@@ -62,6 +64,9 @@ class convolutionalNetwork:
 
     network = []
 
+    # this variable is read after each epoch
+    again = True
+
     def __init__(self, epochs=2000):
 
         self.network = NeuralNet(
@@ -105,6 +110,7 @@ class convolutionalNetwork:
             on_epoch_finished=[
                 AdjustVariable('update_learning_rate', start=0.03, stop=0.0001),
                 AdjustVariable('update_momentum', start=0.9, stop=0.999),
+                checkAgain(self),
                 ],
             regression=True,
             max_epochs=epochs,
@@ -113,17 +119,41 @@ class convolutionalNetwork:
 
     def fit(self, X, y):
 
+        # handle the interrupt signal gracefully
+        # (by stopping after the current epoch)
+        signal.signal(signal.SIGINT, self.handle_break)
+
         return self.network.fit(X,y)
 
     def predict(self, X):
 
         return self.network.predict(X)
 
+    def handle_break(self, signum, frame):
+        """
+        this function handles the siginterrupt by setting the variable 'again'
+        to false
+        """
+
+        print("interrupt signal received. Stopping after the current epoch")
+        self.again = False
 
 
 def float32(k):
     return np.cast['float32'](k)
 
+
+class checkAgain(object):
+    """
+    helper function to stop the computation if requested by the user
+    """
+
+    def __init__(self, network):
+        self.network = network
+
+    def __call__(self, nn, train_history):
+        if not self.network.again:
+            raise StopIteration()
 
 class AdjustVariable(object):
     """

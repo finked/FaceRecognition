@@ -2,6 +2,9 @@
 
 import sys
 import os
+
+from argparse import ArgumentParser
+
 import numpy as np
 import pickle
 
@@ -192,7 +195,16 @@ def main():
     the testset on the with the trained network
     """
 
+    ap = ArgumentParser()
+    ap.add_argument('picklefile', default='')
+    args = ap.parse_args()
+
     fkr = FacialKeypointRecognition(networks.convolutionalNetwork)
+
+    if args.picklefile:
+        # we have a filename
+        fkr.loadState(args.picklefile)
+
     fkr.loadData(reshape=True)
     fkr.fit()
     fkr.predict()
