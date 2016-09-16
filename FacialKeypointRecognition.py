@@ -172,13 +172,13 @@ class FacialKeypointRecognition:
             if retries > 0:
                 oldLimit = sys.getrecursionlimit()
                 limit = oldLimit * 100
-                print("Recursion limit of {} reached. Trying again with {}".format(
+                print("SaveState: Recursion limit of {} reached. Trying again with {}".format(
                     oldLimit, limit))
                 sys.setrecursionlimit(limit)
                 self.saveState(filename, retries=retries-1)
                 sys.setrecursionlimit(oldLimit)
             else:
-                print("Recursion limit reached. Maximum tries exceeded, giving up")
+                print("SaveState: Recursion limit reached. Maximum tries exceeded, giving up")
                 print(RecursionError)
 
 
@@ -192,18 +192,25 @@ class FacialKeypointRecognition:
 def main():
     """
     main function to load the data, train a network on the data and predict
-    the testset on the with the trained network
+    the testset with the trained network
     """
 
+    # commandline arguments
+    # Arguments starting with '-' are optional,
+    # nargs='?' = use one following argument as value
     ap = ArgumentParser()
-    ap.add_argument('picklefile', default='')
+    ap.add_argument('--picklefile', nargs='?')
+    ap.add_argument('--epochs', nargs='?', type=int)
     args = ap.parse_args()
 
-    fkr = FacialKeypointRecognition(networks.convolutionalNetwork)
+    fkr = FacialKeypointRecognition(networks.convolutionalNetwork(args.epochs))
 
     if args.picklefile:
-        # we have a filename
+        # we have a pickle-file that we want to reuse
         fkr.loadState(args.picklefile)
+
+    if args.epochs:
+        fkr.network.network.max_epochs = args.epochs
 
     fkr.loadData(reshape=True)
     fkr.fit()

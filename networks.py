@@ -67,7 +67,10 @@ class convolutionalNetwork:
     # this variable is read after each epoch
     again = True
 
-    def __init__(self, epochs=2000):
+    def __init__(self, epochs=None):
+
+        if not epochs:
+            epochs = 2000
 
         self.network = NeuralNet(
             layers=[
@@ -135,7 +138,7 @@ class convolutionalNetwork:
         to false
         """
 
-        print("interrupt signal received. Stopping after the current epoch")
+        print("\ninterrupt signal received. Stopping after the current epoch")
         self.again = False
 
 
@@ -153,6 +156,8 @@ class checkAgain(object):
 
     def __call__(self, nn, train_history):
         if not self.network.again:
+            # reset so we can run again!
+            self.network.again = True
             raise StopIteration()
 
 class AdjustVariable(object):
@@ -170,5 +175,6 @@ class AdjustVariable(object):
             self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
 
         epoch = train_history[-1]['epoch']
-        new_value = float32(self.ls[epoch - 1])
-        getattr(nn, self.name).set_value(new_value)
+        if epoch < len(self.ls):
+            new_value = float32(self.ls[epoch - 1])
+            getattr(nn, self.name).set_value(new_value)
