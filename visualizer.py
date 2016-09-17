@@ -80,7 +80,7 @@ def showImages(images, predictions=None, imagesInRow=4):
 
 
 
-def plotHistory(*networks):
+def plotHistory(*networks, histOnly=False):
     """
     plot the training history of one or more neural network
 
@@ -89,7 +89,10 @@ def plotHistory(*networks):
 
     for network in networks:
         name = network[0]
-        history = network[1].network.train_history_
+        if histOnly:
+            history = network[1]
+        else:
+            history = network[1].network.train_history_
 
         train_loss = np.array([i["train_loss"] for i in history])
         valid_loss = np.array([i["valid_loss"] for i in history])

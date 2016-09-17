@@ -162,12 +162,17 @@ class FacialKeypointRecognition:
         outputset.to_csv(self.fOutFile, index=False)
 
 
-    def saveState(self, filename='network.pickle', *, retries=5):
+    def saveState(self, filename='network', *, retries=5):
         """save the learned state of the network into a pickle-file"""
 
+        full_filename = "{}.pickle".format(filename)
+        hist_filename = "{}_history.pickle".format(filename)
+
         try:
-            with open(filename, 'wb') as file:
+            with open(full_filename, 'wb') as file:
                 pickle.dump(self.network, file, -1)
+            with open(hist_filename, 'wb') as file:
+                pickle.dump(self.network.network.train_history_, file, -1)
         except RecursionError:
             if retries > 0:
                 oldLimit = sys.getrecursionlimit()

@@ -1,6 +1,7 @@
 """ networks.py - the networks that are used for facial keypoint recognition """
 
 import signal
+import sys
 
 import numpy as np
 import theano
@@ -138,8 +139,15 @@ class convolutionalNetwork:
         to false
         """
 
-        print("\ninterrupt signal received. Stopping after the current epoch")
-        self.again = False
+        if self.again:
+            # first signal - soft stop
+            print(
+                "\ninterrupt signal received. Stopping after the current epoch")
+            self.again = False
+        else:
+            # second signal - break immediately
+            print("\nsecond interrupt signal received. Goodbye")
+            sys.exit(1)
 
 
 def float32(k):
