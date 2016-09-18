@@ -80,7 +80,7 @@ def showImages(images, predictions=None, imagesInRow=4):
 
 
 
-def plotHistory(*networks, histOnly=False):
+def plotHistory(*networks, histOnly=False, limits=[1e-3, 1e-2]):
     """
     plot the training history of one or more neural network
 
@@ -102,7 +102,9 @@ def plotHistory(*networks, histOnly=False):
         plt.legend()
         plt.xlabel("epoch")
         plt.ylabel("loss")
-        plt.ylim(1e-3, 1e-2)
+        # plt.ylim(1e-3, 1e-2)
+        if limits:
+            plt.ylim(*limits)
         plt.yscale("log")
 
     plt.show()
