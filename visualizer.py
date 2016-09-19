@@ -96,8 +96,8 @@ def plotHistory(*networks, histOnly=False, limits=[1e-3, 1e-2]):
 
         train_loss = np.array([i["train_loss"] for i in history])
         valid_loss = np.array([i["valid_loss"] for i in history])
-        plt.plot(train_loss, linewidth=3, label=name + " train")
-        plt.plot(valid_loss, linewidth=3, label=name + " valid")
+        plt.plot(train_loss, linewidth=1, label=name + " train")
+        plt.plot(valid_loss, linewidth=1, label=name + " valid")
         plt.grid()
         plt.legend()
         plt.xlabel("epoch")
