@@ -1,5 +1,6 @@
 """ facial keypoint recognition with a convolutional network """
 
+import sys
 import os
 import numpy as np
 import pickle
@@ -158,14 +159,24 @@ class FacialKeypointRecognition:
         outputset.to_csv(self.fOutFile, index=False)
 
 
-    def saveState(self, filename='network.pickle'):
+    def saveState(self, filename='network.pickle', *, retries=5):
         """save the learned state of the network into a pickle-file"""
 
         try:
             with open(filename, 'wb') as file:
                 pickle.dump(self.network, file, -1)
-        except:
-            print("couldn't save state")
+        except RecursionError:
+            if retries > 0:
+                oldLimit = sys.getrecursionlimit()
+                limit = oldLimit * 100
+                print("Recursion limit of {} reached. Trying again with {}".format(
+                    oldLimit, limit))
+                sys.setrecursionlimit(limit)
+                self.saveState(filename, retries=retries-1)
+                sys.setrecursionlimit(oldLimit)
+            else:
+                print("Recursion limit reached. Maximum tries exceeded, giving up")
+                print(RecursionError)
 
 
     def loadState(self, filename='network.pickle'):
