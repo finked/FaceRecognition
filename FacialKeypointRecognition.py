@@ -2,6 +2,10 @@
 
 import sys
 import os
+from concurrent.futures import ThreadPoolExecutor
+
+from argparse import ArgumentParser
+
 import numpy as np
 import pickle
 
@@ -159,23 +163,28 @@ class FacialKeypointRecognition:
         outputset.to_csv(self.fOutFile, index=False)
 
 
-    def saveState(self, filename='network.pickle', *, retries=5):
+    def saveState(self, filename='network', *, retries=5):
         """save the learned state of the network into a pickle-file"""
 
+        full_filename = "{}.pickle".format(filename)
+        hist_filename = "{}_history.pickle".format(filename)
+
         try:
-            with open(filename, 'wb') as file:
+            with open(full_filename, 'wb') as file:
                 pickle.dump(self.network, file, -1)
+            with open(hist_filename, 'wb') as file:
+                pickle.dump(self.network.network.train_history_, file, -1)
         except RecursionError:
             if retries > 0:
                 oldLimit = sys.getrecursionlimit()
                 limit = oldLimit * 100
-                print("Recursion limit of {} reached. Trying again with {}".format(
+                print("SaveState: Recursion limit of {} reached. Trying again with {}".format(
                     oldLimit, limit))
                 sys.setrecursionlimit(limit)
                 self.saveState(filename, retries=retries-1)
                 sys.setrecursionlimit(oldLimit)
             else:
-                print("Recursion limit reached. Maximum tries exceeded, giving up")
+                print("SaveState: Recursion limit reached. Maximum tries exceeded, giving up")
                 print(RecursionError)
 
 
@@ -185,14 +194,39 @@ class FacialKeypointRecognition:
         with open(filename, 'rb') as file:
             self.network = pickle.load(file)
 
+    def loadStateAndData(self):
+        """
+        load both state and data in parallel
+        """
+
+        with ThreadPoolExecutor(max_workers=2) as e:
+            e.submit(self.loadState, 'net6.pickle')
+            e.submit(self.loadData, reshape=True)
+
 
 def main():
     """
     main function to load the data, train a network on the data and predict
-    the testset on the with the trained network
+    the testset with the trained network
     """
 
-    fkr = FacialKeypointRecognition(networks.convolutionalNetwork)
+    # commandline arguments
+    # Arguments starting with '-' are optional,
+    # nargs='?' = use one following argument as value
+    ap = ArgumentParser()
+    ap.add_argument('--picklefile', nargs='?')
+    ap.add_argument('--epochs', nargs='?', type=int)
+    args = ap.parse_args()
+
+    fkr = FacialKeypointRecognition(networks.convolutionalNetwork(args.epochs))
+
+    if args.picklefile:
+        # we have a pickle-file that we want to reuse
+        fkr.loadState(args.picklefile)
+
+    if args.epochs:
+        fkr.network.network.max_epochs = args.epochs
+
     fkr.loadData(reshape=True)
     fkr.fit()
     fkr.predict()

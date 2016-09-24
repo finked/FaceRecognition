@@ -1,5 +1,8 @@
 """ networks.py - the networks that are used for facial keypoint recognition """
 
+import signal
+import sys
+
 import numpy as np
 import theano
 
@@ -62,7 +65,13 @@ class convolutionalNetwork:
 
     network = []
 
-    def __init__(self, epochs=2000):
+    # this variable is read after each epoch
+    again = True
+
+    def __init__(self, epochs=None):
+
+        if not epochs:
+            epochs = 2000
 
         self.network = NeuralNet(
             layers=[
@@ -105,6 +114,7 @@ class convolutionalNetwork:
             on_epoch_finished=[
                 AdjustVariable('update_learning_rate', start=0.03, stop=0.0001),
                 AdjustVariable('update_momentum', start=0.9, stop=0.999),
+                checkAgain(self),
                 ],
             regression=True,
             max_epochs=epochs,
@@ -113,17 +123,50 @@ class convolutionalNetwork:
 
     def fit(self, X, y):
 
+        # handle the interrupt signal gracefully
+        # (by stopping after the current epoch)
+        signal.signal(signal.SIGINT, self.handle_break)
+
         return self.network.fit(X,y)
 
     def predict(self, X):
 
         return self.network.predict(X)
 
+    def handle_break(self, signum, frame):
+        """
+        this function handles the siginterrupt by setting the variable 'again'
+        to false
+        """
+
+        if self.again:
+            # first signal - soft stop
+            print(
+                "\ninterrupt signal received. Stopping after the current epoch")
+            self.again = False
+        else:
+            # second signal - break immediately
+            print("\nsecond interrupt signal received. Goodbye")
+            sys.exit(1)
 
 
 def float32(k):
     return np.cast['float32'](k)
 
+
+class checkAgain(object):
+    """
+    helper function to stop the computation if requested by the user
+    """
+
+    def __init__(self, network):
+        self.network = network
+
+    def __call__(self, nn, train_history):
+        if not self.network.again:
+            # reset so we can run again!
+            self.network.again = True
+            raise StopIteration()
 
 class AdjustVariable(object):
     """
@@ -140,5 +183,6 @@ class AdjustVariable(object):
             self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
 
         epoch = train_history[-1]['epoch']
-        new_value = float32(self.ls[epoch - 1])
-        getattr(nn, self.name).set_value(new_value)
+        if epoch < len(self.ls):
+            new_value = float32(self.ls[epoch - 1])
+            getattr(nn, self.name).set_value(new_value)
