@@ -2,6 +2,7 @@
 
 import sys
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 from argparse import ArgumentParser
 
@@ -192,6 +193,15 @@ class FacialKeypointRecognition:
 
         with open(filename, 'rb') as file:
             self.network = pickle.load(file)
+
+    def loadStateAndData(self):
+        """
+        load both state and data in parallel
+        """
+
+        with ThreadPoolExecutor(max_workers=2) as e:
+            e.submit(self.loadState, 'net6.pickle')
+            e.submit(self.loadData, reshape=True)
 
 
 def main():
