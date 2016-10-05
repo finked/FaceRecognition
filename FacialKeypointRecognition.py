@@ -18,6 +18,8 @@ from sklearn.utils import shuffle
 from pandas.io.parsers import read_csv
 
 import networks
+from augmentation import histogrammStreching
+
 
 class FacialKeypointRecognition:
     """
@@ -60,6 +62,9 @@ class FacialKeypointRecognition:
 
         self.X_train, self.y_train = self.load(*args, **kwargs)
         self.X_test, _ = self.load(test=True, *args, **kwargs)
+
+        self.X_train = histogrammStreching(self.X_train, (0, 255))
+        self.X_test = histogrammStreching(self.X_test, (0, 255))
 
 
     def load(self,
