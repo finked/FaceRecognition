@@ -35,10 +35,11 @@ class FlipBatchIterator(BatchIterator):
 
    
 
-def histogrammStreching(data):
+def histogrammStreching(data, border=(0,1)):
         """
         strech data from 5% to 95% percent percentile
         """
+
         data = np.array(data)
 
         # calculate mean
@@ -48,7 +49,7 @@ def histogrammStreching(data):
         sigma = np.std(data, axis = 1)
 
         # correct data
-        data = (data-(mean-2*sigma))/(4*sigma)
+        data = (data-(mean-2*sigma))*(border[1] - border[0])/(4*sigma) + border[0]
 
         # return reformed list
         return data.tolist()
