@@ -52,7 +52,7 @@ def histogrammStreching(data, border=(0,1)):
         data = (data-(mean-2*sigma))*(border[1] - border[0])/(4*sigma) + border[0]
 
         # transform float to int type 
-        #data = data.astype(np.int32)
+        data = data.astype(np.float32)
 
         # return reformed list
-        return data.tolist()
+        return data
