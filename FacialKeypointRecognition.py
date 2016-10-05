@@ -103,6 +103,9 @@ class FacialKeypointRecognition:
         if rescale:
             X = np.vstack(df['Image'].values) / 255.
             X = X.astype(np.float32)
+        else:
+            X = np.vstack(df['Image'].values)
+            X = X.astype(np.float32)
 
         # reshape to two-dimensional array
         if reshape:
