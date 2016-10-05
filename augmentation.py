@@ -43,13 +43,16 @@ def histogrammStreching(data, border=(0,1)):
         data = np.array(data)
 
         # calculate mean
-        mean = np.mean(data, axis = 1)
+        mean = np.mean(data, axis = 0)
 
         # calculate standard deviation
-        sigma = np.std(data, axis = 1)
+        sigma = np.std(data, axis = 0)
 
         # correct data
         data = (data-(mean-2*sigma))*(border[1] - border[0])/(4*sigma) + border[0]
+
+        # transform float to int type 
+        #data = data.astype(np.int32)
 
         # return reformed list
         return data.tolist()
