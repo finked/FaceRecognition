@@ -203,7 +203,6 @@ class FacialKeypointRecognition:
             e.submit(self.loadState, 'net6.pickle')
             e.submit(self.loadData, reshape=True)
 
-
 def main():
     """
     main function to load the data, train a network on the data and predict
