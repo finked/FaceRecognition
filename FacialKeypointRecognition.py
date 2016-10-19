@@ -18,7 +18,7 @@ from sklearn.utils import shuffle
 from pandas.io.parsers import read_csv
 
 import networks
-from augmentation import histogrammStreching
+from augmentation import histogrammEqualization
 
 
 class FacialKeypointRecognition:
@@ -63,9 +63,8 @@ class FacialKeypointRecognition:
         self.X_train, self.y_train = self.load(*args, **kwargs)
         self.X_test, _ = self.load(test=True, *args, **kwargs)
 
-        self.X_train = histogrammStreching(self.X_train, (0, 255))
-        self.X_test = histogrammStreching(self.X_test, (0, 255))
-
+        self.X_train = histogrammEqualization(self.X_train)
+        self.X_test = histogrammEqualization(self.X_test)
 
     def load(self,
              test=False,
