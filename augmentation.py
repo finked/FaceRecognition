@@ -78,7 +78,9 @@ def histogrammEqualization(data, nbr_bins=256):
 
         #use linear interpolation of cdf to find new pixel values
         im2 = np.interp(image.flatten(),bins[:-1],cdf)
+        im2 = im2/255.
+        im2 = im2.astype(np.float32)
 
         newData.append(im2.reshape(image.shape))
 
-    return newData
+    return np.array(newData)
