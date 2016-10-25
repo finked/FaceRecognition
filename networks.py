@@ -12,7 +12,65 @@ from nolearn.lasagne import NeuralNet
 
 import augmentation
 
-class simpleNetwork:
+class network:
+    """
+    a base class for a neural network
+    """
+
+    name = 'baseclass'
+    network = []
+
+    # this variable is read after each epoch
+    again = True
+
+    def __init__(self):
+        """
+        set up a network
+        """
+
+        self.network = NeuralNet(layers=[])
+
+    def fit(self, X, y):
+        """
+        use the training set to get a model
+        """
+
+        # handle the interrupt signal gracefully
+        # (by stopping after the current epoch)
+        for instance in self.network.on_epoch_finished:
+            if isinstance(instance, checkAgain):
+                signal.signal(signal.SIGINT, self.handle_break)
+                break
+
+        print('\nusing network {}\n'.format(self.name))
+
+        return self.network.fit(X,y)
+
+    def predict(self, X):
+        """
+        predict the targets after the network is fitted
+        """
+
+        return self.network.predict(X)
+
+    def handle_break(self, signum, frame):
+        """
+        this function handles the siginterrupt by setting the variable 'again'
+        to false
+        """
+
+        if self.again:
+            # first signal - soft stop
+            print(
+                "\ninterrupt signal received. Stopping after the current epoch")
+            self.again = False
+        else:
+            # second signal - break immediately
+            print("\nsecond interrupt signal received. Goodbye")
+            sys.exit(1)
+
+
+class simpleNetwork(network):
     """
     this is the neuronal network that is trained and used to predict targets
 
@@ -26,6 +84,7 @@ class simpleNetwork:
     def __init__(self):
         """set up the network with its layers"""
 
+        self.name = 'simpleNetwork'
         self.network = NeuralNet(
             layers=[
                 ('input', layers.InputLayer),
@@ -42,37 +101,21 @@ class simpleNetwork:
 
             regression=True,
             max_epochs=400,
-            # verbose=1,
+            verbose=1,
         )
 
 
-    def fit(self, X, y):
-        """use the training set to fit the network"""
-
-        return self.network.fit(X,y)
-
-
-    def predict(self, X):
-        """predict the targets after the network is fit"""
-
-        return self.network.predict(X)
-
-
-class convolutionalNetwork:
+class convolutionalNetwork(network):
     """
     a convolutional network as seen in the example from kaggle
     """
-
-    network = []
-
-    # this variable is read after each epoch
-    again = True
 
     def __init__(self, epochs=None):
 
         if not epochs:
             epochs = 2000
 
+        self.name = 'convolutionalNetwork'
         self.network = NeuralNet(
             layers=[
                 ('input', layers.InputLayer),
@@ -120,34 +163,6 @@ class convolutionalNetwork:
             max_epochs=epochs,
             verbose=1,
             )
-
-    def fit(self, X, y):
-
-        # handle the interrupt signal gracefully
-        # (by stopping after the current epoch)
-        signal.signal(signal.SIGINT, self.handle_break)
-
-        return self.network.fit(X,y)
-
-    def predict(self, X):
-
-        return self.network.predict(X)
-
-    def handle_break(self, signum, frame):
-        """
-        this function handles the siginterrupt by setting the variable 'again'
-        to false
-        """
-
-        if self.again:
-            # first signal - soft stop
-            print(
-                "\ninterrupt signal received. Stopping after the current epoch")
-            self.again = False
-        else:
-            # second signal - break immediately
-            print("\nsecond interrupt signal received. Goodbye")
-            sys.exit(1)
 
 
 def float32(k):
