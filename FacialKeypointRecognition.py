@@ -45,10 +45,10 @@ class FacialKeypointRecognition:
         initialize and run the network
         """
 
-        if type(network) == type:
-            self.network = network()
-        else:
+        if isinstance(network, networks.network):
             self.network = network
+        else:
+            self.network = network()
 
 
     def loadData(self, *args, **kwargs):
