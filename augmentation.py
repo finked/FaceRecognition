@@ -31,7 +31,7 @@ class FlipBatchIterator(BatchIterator):
 
         return Xb, yb
 
-   
+
 
 def histogrammStreching(data, border=(0.0,1.0)):
         """

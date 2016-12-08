@@ -116,7 +116,7 @@ class convolutionalNetwork(network):
             epochs = 2000
 
         self.name = 'convolutionalNetwork'
-        
+
         flip_indices = [
             (0, 2), (1, 3),
             (4, 8), (5, 9), (6, 10), (7, 11),
@@ -185,7 +185,7 @@ class convolutionalNetwork8(network):
             epochs = 2000
 
         self.name = 'convolutionalNetwork8'
-        
+
         flip_indices8 = [
             (0,2), (1, 3)
             ]
