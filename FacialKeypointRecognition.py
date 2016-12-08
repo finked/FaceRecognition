@@ -72,6 +72,9 @@ class FacialKeypointRecognition:
         """
 
         self.X_train, self.y_train = self.load(*args, **kwargs)
+
+        # the columns only exist in the trainingsset
+        kwargs.pop("cols")
         self.X_test, _ = self.load(test=True, *args, **kwargs)
 
         self.X_train = histogrammEqualization(self.X_train)
