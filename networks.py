@@ -187,7 +187,7 @@ class convolutionalNetwork8(network):
         self.name = 'convolutionalNetwork8'
         
         flip_indices8 = [
-            (2, 4), (3, 5)
+            (0,2), (1, 3)
             ]
         batch_iterator=augmentation.FlipBatchIterator(batch_size=128)
         batch_iterator.setFlipList(flip_indices8)
