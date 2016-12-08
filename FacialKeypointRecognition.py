@@ -32,7 +32,7 @@ class FacialKeypointRecognition:
     ftrain = './data/training_30.csv'
     ftest = './data/test_30.csv'
     fOutFile = './data/solution_30.csv'
-    
+
     fOutputList = './data/SampleSubmission_30.csv'
     fIdList = './data/IdList_30.csv'
 
