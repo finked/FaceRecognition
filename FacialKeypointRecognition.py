@@ -152,10 +152,12 @@ class FacialKeypointRecognition:
         self.network.fit(self.X_train, self.y_train)
 
 
-    def predict(self):
+    def predict(self, X=None):
         """predict the target values for the testset"""
 
-        self.prediction = self.network.predict(self.X_test)
+        if X is None:
+            X = self.X_test
+        self.prediction = self.network.predict(X)
 
 
     def savePrediction(self):
