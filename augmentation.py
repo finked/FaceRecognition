@@ -7,12 +7,10 @@ class FlipBatchIterator(BatchIterator):
     """
     this class flips the image and the 
     """
-    flip_indices = [
-        (0, 2), (1, 3),
-        (4, 8), (5, 9), (6, 10), (7, 11),
-        (12, 16), (13, 17), (14, 18), (15, 19),
-        (22, 24), (23, 25),
-        ]
+    flip_indices = []
+
+    def setFlipList(self, flip_indices):
+        self.flip_indices = flip_indices
 
     def transform(self, Xb, yb):
         Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)

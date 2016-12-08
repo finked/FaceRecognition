@@ -29,11 +29,12 @@ class FacialKeypointRecognition:
     pictures of faces
     """
 
-    ftrain = './data/training.csv'
-    ftest = './data/test.csv'
-    fIdList = './data/IdList.csv'
-    fOutputList = './data/SampleSubmission.csv'
-    fOutFile = './data/solution.csv'
+    ftrain = './data/training_30.csv'
+    ftest = './data/test_30.csv'
+    fOutFile = './data/solution_30.csv'
+    
+    fOutputList = './data/SampleSubmission_30.csv'
+    fIdList = './data/IdList_30.csv'
 
     X_train, y_train = [], []
     X_test = []
@@ -50,6 +51,16 @@ class FacialKeypointRecognition:
         else:
             self.network = network()
 
+    def setData(self, number):
+        """
+        set data and solution filenames
+        """
+
+        self.ftrain = './data/training_{}.csv'.format(number)
+        self.ftest = './data/test_{}.csv'.format(number)
+        self.fOutFile = './data/solution_{}.csv'.format(number)
+        self.fIdList = './data/IdList_{}.csv'.format(number)
+        self.fOutputList = './data/SampleSubmission_{}.csv'.format(number)
 
     def loadData(self, *args, **kwargs):
         """
@@ -169,6 +180,34 @@ class FacialKeypointRecognition:
         # write output list to disk
         outputset.to_csv(self.fOutFile, index=False)
 
+    def savePrediction8(self):
+        """
+        save the predicted coordinates for the 8-feature set into a csv
+        file to upload
+        """
+        # read id list
+        idset = read_csv(os.path.expanduser(self.fIdList))
+
+        outputPrediction = []
+        mapping = {1:5, 2:6, 3:3, 4:4, 21:1, 22:2, 29:7, 30:8}
+
+        for i in range(len(idset)):
+            # we only predict the second part of the set of images.
+            # so we need to shift by 592
+            # TODO(tobias): shift the images in IdList_8.csv
+            ImageID = idset['ImageId'][i]-592
+            Feature = idset['FeatureName'][i]
+            newFeatureId = mapping[Feature]
+            outputPrediction.append(prediction[ImageID, newFeatureId-1])
+
+        # read output list
+        outputset = read_csv(os.path.expanduser(self.fOutputList))
+
+        # fill output list with predictions
+        outputset['Location'] = outputPrediction
+
+        # write output list to disk
+        outputset.to_csv(os.path.expanduser(self.fOutFile), index=False)
 
     def saveState(self, filename='network', *, retries=5):
         """save the learned state of the network into a pickle-file"""

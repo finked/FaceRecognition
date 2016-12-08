@@ -116,6 +116,16 @@ class convolutionalNetwork(network):
             epochs = 2000
 
         self.name = 'convolutionalNetwork'
+        
+        flip_indices = [
+            (0, 2), (1, 3),
+            (4, 8), (5, 9), (6, 10), (7, 11),
+            (12, 16), (13, 17), (14, 18), (15, 19),
+            (22, 24), (23, 25),
+            ]
+        batch_iterator=augmentation.FlipBatchIterator(batch_size=128)
+        batch_iterator.setFlipList(flip_indices)
+
         self.network = NeuralNet(
             layers=[
                 ('input', layers.InputLayer),
@@ -149,7 +159,7 @@ class convolutionalNetwork(network):
             # update_momentum=0.9,
 
             # data augmentation by flipping the images
-            batch_iterator_train=augmentation.FlipBatchIterator(batch_size=128),
+            batch_iterator_train=batch_iterator,
 
             update_learning_rate=theano.shared(float32(0.03)),
             update_momentum=theano.shared(float32(0.9)),
@@ -164,7 +174,7 @@ class convolutionalNetwork(network):
             verbose=1,
             )
 
-class convolutionalNetworki8(network):
+class convolutionalNetwork8(network):
     """
     a convolutional network as seen in the example from kaggle
     """
@@ -174,7 +184,14 @@ class convolutionalNetworki8(network):
         if not epochs:
             epochs = 2000
 
-        self.name = 'convolutionalNetwork'
+        self.name = 'convolutionalNetwork8'
+        
+        flip_indices8 = [
+            (2, 4), (3, 5)
+            ]
+        batch_iterator=augmentation.FlipBatchIterator(batch_size=128)
+        batch_iterator.setFlipList(flip_indices8)
+
         self.network = NeuralNet(
             layers=[
                 ('input', layers.InputLayer),
@@ -208,7 +225,7 @@ class convolutionalNetworki8(network):
             # update_momentum=0.9,
 
             # data augmentation by flipping the images
-            batch_iterator_train=augmentation.FlipBatchIterator(batch_size=128),
+            batch_iterator_train=batch_iterator,
 
             update_learning_rate=theano.shared(float32(0.03)),
             update_momentum=theano.shared(float32(0.9)),
