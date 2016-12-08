@@ -185,11 +185,15 @@ class FacialKeypointRecognition:
         save the predicted coordinates for the 8-feature set into a csv
         file to upload
         """
+        # transform predictions
+        prediction = self.prediction * 48 + 48
+        prediction = prediction.clip(0, 96)
+
         # read id list
         idset = read_csv(os.path.expanduser(self.fIdList))
 
         outputPrediction = []
-        mapping = {1:5, 2:6, 3:3, 4:4, 21:1, 22:2, 29:7, 30:8}
+        mapping = {1:1, 2:2, 3:3, 4:4, 21:5, 22:6, 29:7, 30:8}
 
         for i in range(len(idset)):
             # we only predict the second part of the set of images.
