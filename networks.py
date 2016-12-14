@@ -12,6 +12,7 @@ from nolearn.lasagne import NeuralNet
 
 import augmentation
 
+
 class network:
     """
     a base class for a neural network
@@ -44,7 +45,7 @@ class network:
 
         print('\nusing network {}\n'.format(self.name))
 
-        return self.network.fit(X,y)
+        return self.network.fit(X, y)
 
     def predict(self, X):
         """
@@ -123,7 +124,7 @@ class convolutionalNetwork(network):
             (12, 16), (13, 17), (14, 18), (15, 19),
             (22, 24), (23, 25),
             ]
-        batch_iterator=augmentation.FlipBatchIterator(batch_size=128)
+        batch_iterator = augmentation.FlipBatchIterator(batch_size=128)
         batch_iterator.setFlipList(flip_indices)
 
         self.network = NeuralNet(
@@ -174,6 +175,7 @@ class convolutionalNetwork(network):
             verbose=1,
             )
 
+
 class convolutionalNetwork8(network):
     """
     a convolutional network as seen in the example from kaggle
@@ -187,9 +189,9 @@ class convolutionalNetwork8(network):
         self.name = 'convolutionalNetwork8'
 
         flip_indices8 = [
-            (0,2), (1, 3)
+            (0, 2), (1, 3)
             ]
-        batch_iterator=augmentation.FlipBatchIterator(batch_size=128)
+        batch_iterator = augmentation.FlipBatchIterator(batch_size=128)
         batch_iterator.setFlipList(flip_indices8)
 
         self.network = NeuralNet(
@@ -258,6 +260,7 @@ class checkAgain(object):
             # reset so we can run again!
             self.network.again = True
             raise StopIteration()
+
 
 class AdjustVariable(object):
     """
