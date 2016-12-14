@@ -39,6 +39,8 @@ class FacialKeypointRecognition:
     X_train, y_train = [], []
     X_test = []
 
+    X_train_augmented, X_test_augmented = [], []
+
     prediction = []
 
     def __init__(self, network=networks.simpleNetwork):
@@ -76,9 +78,6 @@ class FacialKeypointRecognition:
         # the columns only exist in the trainingsset
         kwargs.pop("cols", None)
         self.X_test, _ = self.load(test=True, *args, **kwargs)
-
-        self.X_train = histogrammEqualization(self.X_train)
-        self.X_test = histogrammEqualization(self.X_test)
 
     def load(self,
              test=False,
@@ -145,12 +144,28 @@ class FacialKeypointRecognition:
 
         return X, y
 
+    def augment(self, methods=[histogrammEqualization]):
+        """
+        Use a list of augmentation algorythms
+        The methods are used in the order given.
+        As first input the unchanged sets X_train and X_test are used.
+        The output is saved in X_train_augmented and X_test_augmented.
+        """
+
+        self.X_train_augmented = self.X_train
+        self.X_test_augmented = self.X_test
+
+        for method in methods:
+            self.X_train_augmented = method(self.X_train)
+            self.X_test_augmented = method(self.X_test)
 
     def fit(self):
         """train the network with the training data"""
 
-        self.network.fit(self.X_train, self.y_train)
-
+        if self.X_train_augmented and self.X_test_augmented:
+            self.network.fit(self.X_train_augmented, self.y_train_augmented)
+        else:
+            self.network.fit(self.X_train, self.y_train)
 
     def predict(self, X=None):
         """predict the target values for the testset"""
@@ -158,7 +173,6 @@ class FacialKeypointRecognition:
         if X is None:
             X = self.X_test
         self.prediction = self.network.predict(X)
-
 
     def savePrediction(self):
         """save the predicted coordinates into a csv file to upload"""
