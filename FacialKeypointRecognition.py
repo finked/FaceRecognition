@@ -74,8 +74,7 @@ class FacialKeypointRecognition:
         self.X_train, self.y_train = self.load(*args, **kwargs)
 
         # the columns only exist in the trainingsset
-        if "cols" in kwargs:
-            kwargs.pop("cols")
+        kwargs.pop("cols", None)
         self.X_test, _ = self.load(test=True, *args, **kwargs)
 
         self.X_train = histogrammEqualization(self.X_train)
@@ -219,11 +218,11 @@ class FacialKeypointRecognition:
         # write output list to disk
         outputset.to_csv(os.path.expanduser(self.fOutFile), index=False)
 
-    def saveState(self, filename='network', *, retries=5):
+    def saveState(self, filename='network', foldername='pickle', *, retries=5):
         """save the learned state of the network into a pickle-file"""
 
-        full_filename = "{}.pickle".format(filename)
-        hist_filename = "{}_history.pickle".format(filename)
+        full_filename = "{}/{}.pickle".format(foldername, filename)
+        hist_filename = "{}/{}_history.pickle".format(foldername, filename)
 
         try:
             with open(full_filename, 'wb') as file:
@@ -244,10 +243,11 @@ class FacialKeypointRecognition:
                 print(RecursionError)
 
 
-    def loadState(self, filename='network.pickle'):
+    def loadState(self, filename='network.pickle', foldername='pickle'):
         """load a earlier saved state of the network from a pickle-file"""
 
-        with open(filename, 'rb') as file:
+        full_filename = '{}/{}'.format(foldername, filename)
+        with open(full_filename, 'rb') as file:
             self.network = pickle.load(file)
 
     def loadStateAndData(self):
@@ -269,24 +269,45 @@ def main():
     # Arguments starting with '-' are optional,
     # nargs='?' = use one following argument as value
     ap = ArgumentParser()
-    ap.add_argument('--picklefile', nargs='?')
-    ap.add_argument('--epochs', nargs='?', type=int)
+    ap.add_argument('--picklefile', nargs='?',
+                    help='saved state to resume from')
+    ap.add_argument('--epochs', nargs='?', type=int,
+                    help='how many epochs the network should run fitting')
+    ap.add_argument('--network', nargs='?',
+                    help='which network-class to use - '
+                    'example: "networks.convolutionalNetwork"')
+    ap.add_argument('--dataset', nargs='?',
+                    help='which dataset to load and use. '
+                    'The only possible values right now are 8 or 30')
     args = ap.parse_args()
 
-    fkr = FacialKeypointRecognition(networks.convolutionalNetwork(args.epochs))
+
+    if args.dataset is '8':
+        fkr = FacialKeypointRecognition(networks.convolutionalNetwork8())
+    else:
+        fkr = FacialKeypointRecognition(networks.convolutionalNetwork())
+
 
     if args.picklefile:
         # we have a pickle-file that we want to reuse
         fkr.loadState(args.picklefile)
 
+    # if we loaded a picklefile, it has epochs defined that may not be the same
+    # as our argument
     if args.epochs:
         fkr.network.network.max_epochs = args.epochs
 
+    if args.dataset:
+        fkr.setData(args.dataset)
     fkr.loadData(reshape=True)
     fkr.fit()
     fkr.predict()
     fkr.saveState()
-    fkr.savePrediction()
+
+    if args.dataset is '8':
+        fkr.savePrediction8()
+    else:
+        fkr.savePrediction()
 
 # only run when loaded as top file
 if __name__ == "__main__":
