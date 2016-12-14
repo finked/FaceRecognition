@@ -273,9 +273,6 @@ def main():
                     help='saved state to resume from')
     ap.add_argument('--epochs', nargs='?', type=int,
                     help='how many epochs the network should run fitting')
-    ap.add_argument('--network', nargs='?',
-                    help='which network-class to use - '
-                    'example: "networks.convolutionalNetwork"')
     ap.add_argument('--dataset', nargs='?',
                     help='which dataset to load and use. '
                     'The only possible values right now are 8 or 30')
