@@ -36,6 +36,19 @@ class FacialKeypointRecognition:
     fOutputList = './data/SampleSubmission_30.csv'
     fIdList = './data/IdList_30.csv'
 
+    fFeatureNames = './data/FeatureNames.csv'
+
+    # for network 8 we only use a subsample of columns
+    cols = None
+    cols8 = ["left_eye_center_x",
+             "left_eye_center_y",
+             "right_eye_center_x",
+             "right_eye_center_y",
+             "nose_tip_x",
+             "nose_tip_y",
+             "mouth_center_bottom_lip_x",
+             "mouth_center_bottom_lip_y"]
+
     X_train, y_train = [], []
     X_test = []
 
@@ -62,6 +75,28 @@ class FacialKeypointRecognition:
         self.fIdList = './data/IdList_{}.csv'.format(number)
         self.fOutputList = './data/SampleSubmission_{}.csv'.format(number)
 
+    def setMapping(self, cols):
+        """
+        set a mapping from ids/Featurenames to the internal Id of our set
+
+        this mapping is needed when we want to save the set again
+        """
+
+        feature_names = read_csv(os.path.expanduser(self.fFeatureNames))
+        self.mapping = {i: feature_names[feature] for i, feature in
+                        enumerate(cols)}
+
+    def setNetwork(self, number):
+        """
+        set the state for either network 8 or 30
+        """
+        if number is '8':
+            self.cols = self.cols8
+            self.network = networks.convolutionalNetwork8()
+        else:
+            self.cols = None
+            self.network = networks.convolutionalNetwork()
+
     def loadData(self, *args, **kwargs):
         """
         load the images
@@ -71,7 +106,8 @@ class FacialKeypointRecognition:
         The test-set only contains the images
         """
 
-        self.X_train, self.y_train = self.load(*args, **kwargs)
+        self.setMapping(self.cols)
+        self.X_train, self.y_train = self.load(cols=self.cols, *args, **kwargs)
 
         # the columns only exist in the trainingsset
         kwargs.pop("cols", None)
@@ -160,6 +196,19 @@ class FacialKeypointRecognition:
         self.prediction = self.network.predict(X)
 
 
+    def savePredictionNew(self, outputfilename=None):
+        """
+        save the predicted coordinates to a csv file
+
+        this csv file only holds the predicted features
+        """
+        # transform predictions
+        prediction = self.prediction * 48 + 48
+        prediction = prediction.clip(0, 96)
+
+        # translate internal Ids from numpy array to external Id from
+        # FeatureNames
+
     def savePrediction(self):
         """save the predicted coordinates into a csv file to upload"""
 
@@ -198,7 +247,9 @@ class FacialKeypointRecognition:
         idset = read_csv(os.path.expanduser(self.fIdList))
 
         outputPrediction = []
-        mapping = {1:1, 2:2, 3:3, 4:4, 21:5, 22:6, 29:7, 30:8}
+        mapping = {1: 1, 2: 2, 3: 3, 4: 4,
+                   5: 5, 6: 6, 7: 7, 8: 8,
+                   21: 5, 22: 6, 29: 7, 30: 8}
 
         for i in range(len(idset)):
             # we only predict the second part of the set of images.
@@ -271,19 +322,21 @@ def main():
     ap = ArgumentParser()
     ap.add_argument('--picklefile', nargs='?',
                     help='saved state to resume from')
+    ap.add_argument('--network', nargs='?',
+                    help='which network to use. '
+                    'The only possible values right now are 8 or 30')
     ap.add_argument('--epochs', nargs='?', type=int,
                     help='how many epochs the network should run fitting')
     ap.add_argument('--dataset', nargs='?',
                     help='which dataset to load and use. '
                     'The only possible values right now are 8 or 30')
+    ap.add_argument('--outputfilename', nargs='?',
+                    help='filename of the prediction output')
     args = ap.parse_args()
 
-
-    if args.dataset is '8':
-        fkr = FacialKeypointRecognition(networks.convolutionalNetwork8())
-    else:
-        fkr = FacialKeypointRecognition(networks.convolutionalNetwork())
-
+    fkr = FacialKeypointRecognition()
+    if args.network:
+        fkr.setNetwork(args.network)
 
     if args.picklefile:
         # we have a pickle-file that we want to reuse
@@ -301,10 +354,7 @@ def main():
     fkr.predict()
     fkr.saveState()
 
-    if args.dataset is '8':
-        fkr.savePrediction8()
-    else:
-        fkr.savePrediction()
+    fkr.savePredictionNew(args.outputfilename)
 
 # only run when loaded as top file
 if __name__ == "__main__":
