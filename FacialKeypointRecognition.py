@@ -16,6 +16,7 @@ from sklearn.utils import shuffle
 # import theano.Tensor as T
 # from lasagne.nonlinearities import leaky_rectify, softmax
 from pandas.io.parsers import read_csv
+from pandas import DataFrame
 
 import networks
 from augmentation import histogrammEqualization
@@ -29,9 +30,9 @@ class FacialKeypointRecognition:
     pictures of faces
     """
 
-    ftrain = './data/training_30.csv'
-    ftest = './data/test_30.csv'
-    fOutFile = './data/solution_30.csv'
+    ftrain = './data/training.csv'
+    ftest = './data/test.csv'
+    fOutFile = './data/solution.csv'
 
     fOutputList = './data/SampleSubmission_30.csv'
     fIdList = './data/IdList_30.csv'
@@ -49,6 +50,7 @@ class FacialKeypointRecognition:
              "mouth_center_bottom_lip_x",
              "mouth_center_bottom_lip_y"]
 
+    feature_mapping, id_mapping = {}, {}
     X_train, y_train = [], []
     X_test = []
 
@@ -69,8 +71,8 @@ class FacialKeypointRecognition:
         set data and solution filenames
         """
 
-        self.ftrain = './data/training_{}.csv'.format(number)
-        self.ftest = './data/test_{}.csv'.format(number)
+        # self.ftrain = './data/training_{}.csv'.format(number)
+        # self.ftest = './data/test_{}.csv'.format(number)
         self.fOutFile = './data/solution_{}.csv'.format(number)
         self.fIdList = './data/IdList_{}.csv'.format(number)
         self.fOutputList = './data/SampleSubmission_{}.csv'.format(number)
@@ -80,11 +82,28 @@ class FacialKeypointRecognition:
         set a mapping from ids/Featurenames to the internal Id of our set
 
         this mapping is needed when we want to save the set again
+
+        basically we have a list of names with an index that we filter against
+        the provided names in 'cols'
+
+        Example:
+
+            id | name
+            ---------
+             1 | a
+             2 | b
+             3 | c
+
+             with cols ['a', 'c'] would give the following dict:
+             {1: 'a',
+              3: 'c'}
         """
 
-        feature_names = read_csv(os.path.expanduser(self.fFeatureNames))
-        self.mapping = {i: feature_names[feature] for i, feature in
-                        enumerate(cols)}
+        feature_names = read_csv(os.path.expanduser(self.fFeatureNames),
+                                 names=['Id', 'Name'],
+                                 index_col='Id')
+        self.feature_mapping = \
+            feature_names[feature_names.Name.isin(cols)].Name.to_dict()
 
     def setNetwork(self, number):
         """
@@ -106,7 +125,6 @@ class FacialKeypointRecognition:
         The test-set only contains the images
         """
 
-        self.setMapping(self.cols)
         self.X_train, self.y_train = self.load(cols=self.cols, *args, **kwargs)
 
         # the columns only exist in the trainingsset
@@ -149,9 +167,23 @@ class FacialKeypointRecognition:
         if cols:
             df = df[list(cols) + ['Image']]
 
+        # if we didn't select any columns, we need to set them here
+        # (just take all columns but 'Image')
+        if self.cols is None:
+            self.cols = df.columns[:-1]
+
         # only use cols without missing values
         if dropMissing:
             df = df.dropna()
+
+        # create mapping between imageId and position in our numpy array
+        # cols['internalId'] = range(len(df))
+        # self.id_mapping = df['internalId'].to_dict()
+        # # swap index and value
+        # self.id_mapping = {v: k for k, v in self.id_mapping.items()}
+        self.index = df.index.copy()
+        self.index.name = 'imageId'
+        print(self.index)
 
         # scale pixel values
         if rescale:
@@ -202,12 +234,19 @@ class FacialKeypointRecognition:
 
         this csv file only holds the predicted features
         """
+
+        if outputfilename is None:
+            outputfilename = '.data/solution.csv'
         # transform predictions
         prediction = self.prediction * 48 + 48
         prediction = prediction.clip(0, 96)
 
-        # translate internal Ids from numpy array to external Id from
-        # FeatureNames
+        # convert from numpy array to pandas dataframe
+        # and get our old index and columns back
+        outputset = DataFrame(prediction)
+        outputset.index = self.index
+        outputset.columns = self.cols
+        outputset.to_csv(self.fOutFile)
 
     def savePrediction(self):
         """save the predicted coordinates into a csv file to upload"""
