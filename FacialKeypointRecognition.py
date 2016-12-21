@@ -16,6 +16,7 @@ from sklearn.utils import shuffle
 # import theano.Tensor as T
 # from lasagne.nonlinearities import leaky_rectify, softmax
 from pandas.io.parsers import read_csv
+from pandas import DataFrame
 
 import networks
 from augmentation import histogrammEqualization
@@ -29,13 +30,27 @@ class FacialKeypointRecognition:
     pictures of faces
     """
 
-    ftrain = './data/training_30.csv'
-    ftest = './data/test_30.csv'
-    fOutFile = './data/solution_30.csv'
+    ftrain = './data/training.csv'
+    ftest = './data/test.csv'
+    fOutFile = './data/solution.csv'
 
     fOutputList = './data/SampleSubmission_30.csv'
     fIdList = './data/IdList_30.csv'
 
+    fFeatureNames = './data/FeatureNames.csv'
+
+    # for network 8 we only use a subsample of columns
+    cols = None
+    cols8 = ["left_eye_center_x",
+             "left_eye_center_y",
+             "right_eye_center_x",
+             "right_eye_center_y",
+             "nose_tip_x",
+             "nose_tip_y",
+             "mouth_center_bottom_lip_x",
+             "mouth_center_bottom_lip_y"]
+
+    feature_mapping, id_mapping = {}, {}
     X_train, y_train = [], []
     X_test = []
 
@@ -56,11 +71,50 @@ class FacialKeypointRecognition:
         set data and solution filenames
         """
 
-        self.ftrain = './data/training_{}.csv'.format(number)
-        self.ftest = './data/test_{}.csv'.format(number)
+        # self.ftrain = './data/training_{}.csv'.format(number)
+        # self.ftest = './data/test_{}.csv'.format(number)
         self.fOutFile = './data/solution_{}.csv'.format(number)
         self.fIdList = './data/IdList_{}.csv'.format(number)
         self.fOutputList = './data/SampleSubmission_{}.csv'.format(number)
+
+    def setMapping(self, cols):
+        """
+        set a mapping from ids/Featurenames to the internal Id of our set
+
+        this mapping is needed when we want to save the set again
+
+        basically we have a list of names with an index that we filter against
+        the provided names in 'cols'
+
+        Example:
+
+            id | name
+            ---------
+             1 | a
+             2 | b
+             3 | c
+
+             with cols ['a', 'c'] would give the following dict:
+             {1: 'a',
+              3: 'c'}
+        """
+
+        feature_names = read_csv(os.path.expanduser(self.fFeatureNames),
+                                 names=['Id', 'Name'],
+                                 index_col='Id')
+        self.feature_mapping = \
+            feature_names[feature_names.Name.isin(cols)].Name.to_dict()
+
+    def setNetwork(self, number):
+        """
+        set the state for either network 8 or 30
+        """
+        if number is '8':
+            self.cols = self.cols8
+            self.network = networks.convolutionalNetwork8()
+        else:
+            self.cols = None
+            self.network = networks.convolutionalNetwork()
 
     def loadData(self, *args, **kwargs):
         """
@@ -71,7 +125,7 @@ class FacialKeypointRecognition:
         The test-set only contains the images
         """
 
-        self.X_train, self.y_train = self.load(*args, **kwargs)
+        self.X_train, self.y_train = self.load(cols=self.cols, *args, **kwargs)
 
         # the columns only exist in the trainingsset
         kwargs.pop("cols", None)
@@ -113,9 +167,23 @@ class FacialKeypointRecognition:
         if cols:
             df = df[list(cols) + ['Image']]
 
+        # if we didn't select any columns, we need to set them here
+        # (just take all columns but 'Image')
+        if self.cols is None:
+            self.cols = df.columns[:-1]
+
         # only use cols without missing values
         if dropMissing:
             df = df.dropna()
+
+        # create mapping between imageId and position in our numpy array
+        # cols['internalId'] = range(len(df))
+        # self.id_mapping = df['internalId'].to_dict()
+        # # swap index and value
+        # self.id_mapping = {v: k for k, v in self.id_mapping.items()}
+        self.index = df.index.copy()
+        self.index.name = 'imageId'
+        print(self.index)
 
         # scale pixel values
         if rescale:
@@ -160,6 +228,26 @@ class FacialKeypointRecognition:
         self.prediction = self.network.predict(X)
 
 
+    def savePredictionNew(self, outputfilename=None):
+        """
+        save the predicted coordinates to a csv file
+
+        this csv file only holds the predicted features
+        """
+
+        if outputfilename is None:
+            outputfilename = '.data/solution.csv'
+        # transform predictions
+        prediction = self.prediction * 48 + 48
+        prediction = prediction.clip(0, 96)
+
+        # convert from numpy array to pandas dataframe
+        # and get our old index and columns back
+        outputset = DataFrame(prediction)
+        outputset.index = self.index
+        outputset.columns = self.cols
+        outputset.to_csv(self.fOutFile)
+
     def savePrediction(self):
         """save the predicted coordinates into a csv file to upload"""
 
@@ -198,7 +286,9 @@ class FacialKeypointRecognition:
         idset = read_csv(os.path.expanduser(self.fIdList))
 
         outputPrediction = []
-        mapping = {1:1, 2:2, 3:3, 4:4, 21:5, 22:6, 29:7, 30:8}
+        mapping = {1: 1, 2: 2, 3: 3, 4: 4,
+                   5: 5, 6: 6, 7: 7, 8: 8,
+                   21: 5, 22: 6, 29: 7, 30: 8}
 
         for i in range(len(idset)):
             # we only predict the second part of the set of images.
@@ -271,19 +361,21 @@ def main():
     ap = ArgumentParser()
     ap.add_argument('--picklefile', nargs='?',
                     help='saved state to resume from')
+    ap.add_argument('--network', nargs='?',
+                    help='which network to use. '
+                    'The only possible values right now are 8 or 30')
     ap.add_argument('--epochs', nargs='?', type=int,
                     help='how many epochs the network should run fitting')
     ap.add_argument('--dataset', nargs='?',
                     help='which dataset to load and use. '
                     'The only possible values right now are 8 or 30')
+    ap.add_argument('--outputfilename', nargs='?',
+                    help='filename of the prediction output')
     args = ap.parse_args()
 
-
-    if args.dataset is '8':
-        fkr = FacialKeypointRecognition(networks.convolutionalNetwork8())
-    else:
-        fkr = FacialKeypointRecognition(networks.convolutionalNetwork())
-
+    fkr = FacialKeypointRecognition()
+    if args.network:
+        fkr.setNetwork(args.network)
 
     if args.picklefile:
         # we have a pickle-file that we want to reuse
@@ -301,10 +393,7 @@ def main():
     fkr.predict()
     fkr.saveState()
 
-    if args.dataset is '8':
-        fkr.savePrediction8()
-    else:
-        fkr.savePrediction()
+    fkr.savePredictionNew(args.outputfilename)
 
 # only run when loaded as top file
 if __name__ == "__main__":
